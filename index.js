@@ -135,3 +135,10 @@ bot.command("site", (ctx) => ctx.reply(data));
 
 bot.catch((err) => console.log(err));
 bot.start();
+
+require("http")
+  .createServer((req, res) => {
+    res.write("1");
+    res.end();
+  })
+  .listen(3000, () => console.log("Сервер всети"));
