@@ -138,7 +138,7 @@ const self = await tg.start({
 
 console.log(`✨ зашел в ${self.displayName}`);
 
-require("http")
+(await import("http"))
   .createServer((req, res) => {
     res.write("1");
     res.end();
