@@ -1,108 +1,32 @@
-require("dotenv").config();
-const Booru = require("booru");
+import "dotenv/config";
 
-const { Bot, InlineKeyboard, InlineQueryResultBuilder } = require("grammy");
-const { autoRetry } = require("@grammyjs/auto-retry");
+import Booru from "booru";
+import {
+  TelegramClient,
+  BotInline,
+  BotInlineMessage,
+  BotKeyboard,
+} from "@mtcute/node";
+import { Dispatcher, filters } from "@mtcute/dispatcher";
 
-const bot = new Bot(process.env.tg_token);
-bot.api.config.use(autoRetry());
+const tg = new TelegramClient({
+  apiId: Number.parseInt(process.env.API_ID),
+  apiHash: process.env.API_HASH,
+  storage: "booruBot",
+});
 
-const allSites = Object.values(Booru.sites)
-  .map((site) => site.aliases)
-  .flat();
+tg.onError((err) => console.error(err));
 
-bot.on("inline_query", async (ctx) => {
-  if (!ctx.inlineQuery.query && !ctx.inlineQuery.query.trim()) {
-    return ctx.answerInlineQuery([]);
-  }
+const dp = Dispatcher.for(tg);
 
-  const page = parseInt(ctx.inlineQuery.offset || "0", 16) || 0;
-  const tags = ctx.inlineQuery.query.split(" ").filter((t) => t);
-  const result = [];
+const data =
+  "ДОМЕН - псведонимы\n" +
+  Object.values(Booru.sites)
+    .map((site) => "* " + site.domain + " - " + site.aliases.join(", "))
+    .join("\n");
 
-  const isSOURCE = allSites.includes(tags[0]);
-  const data = await Booru.search(
-    isSOURCE ? tags[0] : "safe",
-    isSOURCE ? tags.slice(1) : tags,
-    { limit: 50, page },
-  );
-
-  if (data.posts.length == 0) return ctx.answerInlineQuery([]);
-
-  data.posts.forEach((post, index) => {
-    const ext = getExt(post.fileUrl);
-    const title = post.tags.join(", ");
-    const caption =
-      "Загрузил: " +
-      post.data.owner +
-      "\nОчков: " +
-      post.score +
-      "\nКомментариев: " +
-      post.data.comment_count;
-
-    const keyboard = new InlineKeyboard()
-      .url("Пост", post.postView)
-      .url(
-        "Источник",
-        post.source?.startsWith?.("https://")
-          ? post.source.trim().split(" ")[0]
-          : post.fileUrl,
-      )
-      .row()
-      .switchInlineCurrent(
-        "Искать по этим тэгам",
-        (isSOURCE ? tags[0] : "safe") + " " + post.tags.join(" "),
-      );
-
-    if (!post.previewUrl) post.previewUrl = post.fileUrl;
-
-    if (ext == "animation") {
-      result.push(
-        InlineQueryResultBuilder.mpeg4gif(
-          index,
-          post.fileUrl,
-          post.previewUrl,
-          {
-            title,
-            caption,
-            reply_marup: keyboard,
-          },
-        ),
-      );
-    } else if (ext == "video") {
-      result.push(
-        InlineQueryResultBuilder.videoMp4(
-          index,
-          post.tags.join(", "),
-          post.fileUrl.replace(/.webm|.mkv/, ".mp4"),
-          post.previewUrl,
-          {
-            title,
-            caption,
-            mime_type: "video/mp4",
-            reply_markup: keyboard,
-          },
-        ),
-      );
-    } else {
-      result.push(
-        InlineQueryResultBuilder.photo(index, post.fileUrl, {
-          title,
-          caption,
-          photo_url: post.fileUrl,
-          thumbnail_url: post.previewUrl,
-          reply_markup: keyboard,
-        }),
-      );
-    }
-  });
-
-  ctx
-    .answerInlineQuery(result, {
-      cache_time: 60 * 60 * 1,
-      next_offset: (page + 1).toString(16),
-    })
-    .catch((err) => console.log(err));
+dp.onNewMessage(filters.command("site"), async (msg) => {
+  await msg.replyText(data);
 });
 
 const getExt = (url) => {
@@ -111,9 +35,9 @@ const getExt = (url) => {
     case "JPG":
     case "JPEG":
     case "WEBP":
-      return "image";
+      return "photo";
     case "GIF":
-      return "animation";
+      return "gif";
     case "MP4":
     case "MKV":
     case "MOV":
@@ -121,24 +45,102 @@ const getExt = (url) => {
       return "video";
     default:
       console.log(url);
-      return null;
+      return "photo";
   }
 };
 
-const data =
-  "ДОМЕН - псведонимы\n" +
-  Object.values(Booru.sites)
-    .map((site) => "* " + site.domain + " - " + site.aliases.join(", "))
-    .join("\n");
+const allSites = Object.values(Booru.sites)
+  .map((site) => site.aliases)
+  .flat();
+const limit = 50;
+const cacheTime = 60 * 60 * 1;
 
-bot.command("site", (ctx) => ctx.reply(data));
+dp.onInlineQuery(async (inlineQuery) => {
+  if (!inlineQuery.query || !inlineQuery.query.trim()) {
+    return inlineQuery.answer([]);
+  }
+  const page = parseInt(inlineQuery.offset || "0", 16) || 0;
+  const tags = inlineQuery.query.split(" ").filter((t) => t);
+  const result = [];
 
-bot.catch((err) => console.log(err));
-bot.start();
+  const isSOURCE = allSites.includes(tags[0]);
+  const data = await Booru.search(
+    isSOURCE ? tags[0] : "safe",
+    isSOURCE ? tags.slice(1) : tags,
+    { limit, page },
+  );
+
+  if (data.posts.length == 0) return inlineQuery.answer(result);
+
+  data.posts.forEach((post, index) => {
+    const ext = getExt(post.fileUrl);
+    const description =
+      "Загрузил: " +
+      post.data.owner +
+      "\nОчков: " +
+      post.score +
+      "\nКомментариев: " +
+      post.data.comment_count;
+
+    const keyboard = BotKeyboard.inline([
+      [
+        BotKeyboard.url("Пост", post.postView),
+        BotKeyboard.url(
+          "Источник",
+          post.source?.startsWith?.("https://")
+            ? post.source.trim().split(" ")[0]
+            : post.fileUrl,
+        ),
+      ],
+      [
+        BotKeyboard.switchInline(
+          "Искать по этим тэгам",
+          (isSOURCE ? tags[0] : "safe") + " " + post.tags.join(" "),
+          true,
+        ),
+      ],
+    ]);
+
+    const payload = {
+      title: post.tags.join(", "),
+      description,
+      thumb: post.previewUrl || undefined,
+      message: BotInlineMessage.media({
+        text: description,
+        replyMarkup: keyboard,
+      }),
+    };
+
+    if (ext === "video") {
+      payload.isEmbed = false;
+      payload.mime_type = "video/mp4";
+      payload.thumb = post.fileUrl;
+    }
+
+    if (post.width && post.height) {
+      payload.width = post.width;
+      payload.height = post.height;
+    }
+
+    result.push(BotInline[ext](index.toString(), post.fileUrl, payload));
+  });
+
+  await inlineQuery.answer(result, {
+    cacheTime,
+    nextOffset:
+      limit === data.posts.length ? (page + 1).toString(16) : undefined,
+  });
+});
+
+const self = await tg.start({
+  botToken: process.env.TG_TOKEN,
+});
+
+console.log(`✨ зашел в ${self.displayName}`);
 
 require("http")
   .createServer((req, res) => {
     res.write("1");
     res.end();
   })
-  .listen(3000, () => console.log("Сервер всети"));
+  .listen(process.env.PORT || 3000, () => console.log("Сервер всети"));
