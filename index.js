@@ -29,6 +29,23 @@ dp.onNewMessage(filters.command("site"), async (msg) => {
   await msg.replyText(data);
 });
 
+dp.onNewMessage(filters.command("uptime"), async (msg) => {
+  const uptime = Math.floor(process.uptime());
+
+  const d = Math.floor(uptime / 86400);
+  const h = Math.floor((uptime / 3600) % 24);
+  const m = Math.floor((uptime / 60) % 60);
+  const s = uptime % 60;
+
+  const info =
+    (d < 1 ? "" : d.toString().padStart(2, "0") + " д, ") +
+    (h < 1 ? "" : h.toString().padStart(2, "0") + " ч, ") +
+    (m < 1 ? "" : m.toString().padStart(2, "0") + " мин, ") +
+    (s < 1 ? "" : s.toString().padStart(2, "0") + " секунд");
+
+  await msg.replyText(info);
+});
+
 const getExt = (url) => {
   switch (url.split(".").pop().toUpperCase()) {
     case "PNG":
@@ -70,8 +87,9 @@ dp.onInlineQuery(async (inlineQuery) => {
     { limit, page },
   );
 
-  data.posts.forEach((post, index) => {
+  data.posts.forEach((post) => {
     if (!post.available) return;
+
     const ext = getExt(post.fileUrl);
     const description =
       (post.data.owner ? "Загрузил: " + post.data.owner + "\n" : "") +
