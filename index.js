@@ -70,17 +70,15 @@ dp.onInlineQuery(async (inlineQuery) => {
     { limit, page },
   );
 
-  if (data.posts.length == 0) return inlineQuery.answer(result);
-
   data.posts.forEach((post, index) => {
+    if (!post.available) return;
     const ext = getExt(post.fileUrl);
     const description =
-      "Загрузил: " +
-      post.data.owner +
-      "\nОчков: " +
-      post.score +
-      "\nКомментариев: " +
-      post.data.comment_count;
+      (post.data.owner ? "Загрузил: " + post.data.owner + "\n" : "") +
+        (post.score ? "Очков: " + post.score + "\n" : "") +
+        (post.data.comment_count
+          ? "Комментариев: " + post.data.comment_count
+          : "") || "";
 
     const keyboard = BotKeyboard.inline([
       [
@@ -104,7 +102,7 @@ dp.onInlineQuery(async (inlineQuery) => {
     const payload = {
       title: post.tags.join(", "),
       description,
-      thumb: post.previewUrl || undefined,
+      thumb: post.previewUrl || post.sampleUrl || undefined,
       message: BotInlineMessage.media({
         text: description,
         replyMarkup: keyboard,
@@ -113,8 +111,7 @@ dp.onInlineQuery(async (inlineQuery) => {
 
     if (ext === "video") {
       payload.isEmbed = false;
-      payload.mime_type = "video/mp4";
-      payload.thumb = post.fileUrl;
+      if (!payload.thumb) payload.thumb = post.fileUrl;
     }
 
     if (post.width && post.height) {
@@ -122,7 +119,7 @@ dp.onInlineQuery(async (inlineQuery) => {
       payload.height = post.height;
     }
 
-    result.push(BotInline[ext](index.toString(), post.fileUrl, payload));
+    result.push(BotInline[ext](post.id.toString(), post.fileUrl, payload));
   });
 
   await inlineQuery.answer(result, {
