@@ -11,8 +11,8 @@
   "license": "ISC",
   "description": "",
   "dependencies": {
-    "@mtcute/dispatcher": "^0.17.2",
-    "@mtcute/node": "^0.17.0",
+    "@mtcute/dispatcher": "^0.18.0-rc.5",
+    "@mtcute/node": "^0.18.0-rc.5",
     "booru": "^2.6.9",
     "dotenv": "^16.4.7"
   }
