@@ -8,11 +8,12 @@ import {
 } from "@mtcute/node";
 import { Dispatcher, filters } from "@mtcute/dispatcher";
 import { chunkArray, getExt } from "./utils.js";
+import pgStorage from "./storage/main.js";
 
 const tg = new TelegramClient({
   apiId: Number.parseInt(process.env.API_ID),
   apiHash: process.env.API_HASH,
-  storage: "booruBot",
+  storage: pgStorage.driver ? pgStorage : "booruBot",
 });
 
 tg.onError.add((err) => console.error(err));
@@ -56,7 +57,10 @@ dp.onInlineQuery(async (inlineQuery) => {
     return inlineQuery.answer([]);
   }
   const page = parseInt(inlineQuery.offset || "0", 16) || 0;
-  const tags = inlineQuery.query.split(" ").filter((t) => t);
+  const tags = inlineQuery.query
+    .trim()
+    .split(/\s+/)
+    .filter((t) => t);
   const result = [];
 
   const isSOURCE = allSites.includes(tags[0]);

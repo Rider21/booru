@@ -3,8 +3,7 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
-    "start": "node index.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "node index.js"
   },
   "type": "module",
   "author": "",
@@ -14,6 +13,7 @@
     "@mtcute/dispatcher": "^0.18.0-rc.5",
     "@mtcute/node": "^0.18.0-rc.5",
     "booru": "^2.6.9",
-    "dotenv": "^16.4.7"
+    "dotenv": "^16.4.7",
+    "pg": "^8.13.1"
   }
 }

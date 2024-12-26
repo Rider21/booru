@@ -14,9 +14,15 @@ const getExt = (url = "", tags = []) => {
     case "WEBM":
       return "video";
     default:
-      if (tags.includes("sound")) return "video";
-      if (tags.find((t) => t === "animated" || t == "gif")) return "gif";
-
+      for (let tag of tags) {
+        switch (tag) {
+          case "sound":
+            return "video";
+          case "animated":
+          case "gif":
+            return "gif";
+        }
+      }
       return "photo";
   }
 };
