@@ -38,7 +38,7 @@ do update set peer_id = excluded.peer_id, chat_id = excluded.chat_id, msg_id = e
       parseInt(msg_id, 10),
     ]);
 
-    return result;
+    return result.length === 1 ? result[0] : result;
   }
 
   async delete(chatId: number, msgIds: number[]) {
