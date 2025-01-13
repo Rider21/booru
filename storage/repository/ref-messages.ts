@@ -1,5 +1,9 @@
-export default class IReferenceMessagesRepository {
-  constructor(pool) {
+import { IReferenceMessagesRepository } from "@mtcute/node";
+import { Pool } from "pg";
+
+export class RefMessagesRepository implements IReferenceMessagesRepository {
+  pool: Pool;
+  constructor(pool: Pool) {
     this.pool = pool;
     pool.query(`create table if not exists message_refs (
 peer_id bigint NOT NULL,
@@ -7,11 +11,11 @@ chat_id bigint NOT NULL,
 msg_id bigint NOT NULL,
 primary key (peer_id, chat_id, msg_id)
 );
-CREATE INDEX IF NOT EXISTS idx_message_refs_peer ON message_refs (peer_id);
-CREATE INDEX IF NOT EXISTS idx_message_refs ON message_refs (chat_id, msg_id);`);
+create index if not exists idx_message_refs_peer on message_refs (peer_id);
+create index if not exists idx_message_refs on message_refs (chat_id, msg_id);`);
   }
 
-  async store(peerId, chatId, msgId) {
+  async store(peerId: number, chatId: number, msgId: number) {
     await this.pool.query(
       `insert into message_refs (peer_id, chat_id, msg_id)
 values ($1, $2, $3)
@@ -21,7 +25,7 @@ do update set peer_id = excluded.peer_id, chat_id = excluded.chat_id, msg_id = e
     );
   }
 
-  async getByPeer(peerId) {
+  async getByPeer(peerId: number): Promise<any> {
     const res = await this.pool.query(
       "select chat_id, msg_id from message_refs where peer_id = $1",
       [peerId],
@@ -33,10 +37,11 @@ do update set peer_id = excluded.peer_id, chat_id = excluded.chat_id, msg_id = e
       parseInt(chat_id, 10),
       parseInt(msg_id, 10),
     ]);
-    return result.length === 1 ? result[0] : result;
+
+    return result;
   }
 
-  async delete(chatId, msgIds) {
+  async delete(chatId: number, msgIds: number[]) {
     await this.pool.query(`delete from message_refs
 where (chat_id, msg_id) IN (
 ${msgIds.map((value) => `(${chatId}, ${value})`).join(",\n")}
@@ -44,7 +49,7 @@ ${msgIds.map((value) => `(${chatId}, ${value})`).join(",\n")}
 `);
   }
 
-  async deleteByPeer(peerId) {
+  async deleteByPeer(peerId: number) {
     await this.pool.query("delete from message_refs where peer_id = $1", [
       peerId,
     ]);

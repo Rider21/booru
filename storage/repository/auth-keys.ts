@@ -1,5 +1,10 @@
-export default class IAuthKeysRepository {
-  constructor(pool) {
+import { IAuthKeysRepository } from "@mtcute/node";
+import { Pool } from "pg";
+
+export class AuthKeysRepository implements IAuthKeysRepository {
+  pool: Pool;
+
+  constructor(pool: Pool) {
     this.pool = pool;
     pool.query(`create table if not exists auth_keys (
   dc integer primary key,
@@ -18,12 +23,12 @@ create table if not exists temp_auth_keys (
     await this.pool.query("delete from auth_keys");
   }
 
-  async deleteByDc(dc) {
+  async deleteByDc(dc: number) {
     await this.pool.query("delete from auth_keys where dc = $1", [dc]);
     await this.pool.query("delete from temp_auth_keys where dc = $1", [dc]);
   }
 
-  async get(dc) {
+  async get(dc: number) {
     const result = await this.pool.query(
       "select key from auth_keys where dc = $1",
       [dc],
@@ -31,7 +36,7 @@ create table if not exists temp_auth_keys (
     return result.rows.length === 0 ? null : result.rows[0].key;
   }
 
-  async getTemp(dc, idx, now) {
+  async getTemp(dc: number, idx: number, now: number) {
     const result = await this.pool.query(
       "select key from temp_auth_keys where dc = $1 and idx = $2 and expires > $3",
       [dc, idx, now],
@@ -39,7 +44,7 @@ create table if not exists temp_auth_keys (
     return result.rows.length === 0 ? null : result.rows[0].key;
   }
 
-  async set(dc, key) {
+  async set(dc: number, key: Uint8Array | null) {
     if (!key) {
       await this.pool.query("delete from auth_keys where dc = $1", [dc]);
       return;
@@ -50,7 +55,12 @@ create table if not exists temp_auth_keys (
     );
   }
 
-  async setTemp(dc, idx, key, expires) {
+  async setTemp(
+    dc: number,
+    idx: number,
+    key: Uint8Array | null,
+    expires: number,
+  ) {
     if (!key) {
       await this.pool.query(
         "delete from temp_auth_keys where dc = $1 and idx = $2",

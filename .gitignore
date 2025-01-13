@@ -131,3 +131,5 @@ dist
 
 # TG db
 booruBo*
+
+storage/*.test.js
