@@ -115,7 +115,7 @@ export class Caching {
             file_id: media.fileId,
             file_type: info.file_type || 2,
           });
-          this.count++
+          this.count++;
           this.exists.delete(query.domain + query.id);
         })
         .catch((err) => {

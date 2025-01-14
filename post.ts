@@ -34,10 +34,10 @@ const generateResults = (
     const ext = fileType[cache?.file_type] || getExt(post.fileUrl, post.tags);
 
     const description =
-      (post.data.owner ? "Загрузил: " + post.data.owner + "\n" : "") +
-        (post.score ? "Очков: " + post.score + "\n" : "") +
+      (post.data.owner ? "Загрузил: " + post.data.owner : "") +
+        (post.score ? "\nОчков: " + post.score : "") +
         (post.data.comment_count
-          ? "Комментариев: " + post.data.comment_count
+          ? "\nКомментариев: " + post.data.comment_count
           : "") || "";
 
     const keyboard = BotKeyboard.inline([

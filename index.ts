@@ -47,7 +47,7 @@ tg.onNewMessage.add((msg) => {
 
 const allSites = Object.values(sites).flatMap((site) => site.aliases);
 const limit = 50;
-const cacheTime =  60 * 60 * 1;
+const cacheTime = 60 * 60 * 1;
 
 tg.onInlineQuery.add(async (inlineQuery) => {
   if (!inlineQuery.query || !inlineQuery.query.trim()) {
@@ -64,7 +64,16 @@ tg.onInlineQuery.add(async (inlineQuery) => {
     isSOURCE ? tags[0] : "safe",
     isSOURCE ? tags.slice(1) : tags,
     { limit, page, showUnavailable: true },
-  );
+  ).catch((err) => {
+    console.log(err);
+    return null;
+  });
+
+  if (!data || data.posts.length === 0) {
+    return tg
+      .answerInlineQuery(inlineQuery, [], { cacheTime })
+      .catch((err) => console.log(err));
+  }
 
   const caches = await storage.postCache.get(
     data.booru.domain,
@@ -77,11 +86,13 @@ tg.onInlineQuery.add(async (inlineQuery) => {
     manager,
   );
 
-  await tg.answerInlineQuery(inlineQuery, result, {
-    cacheTime,
-    nextOffset:
-      limit === data.posts.length ? (page + 1).toString(16) : undefined,
-  });
+  await tg
+    .answerInlineQuery(inlineQuery, result, {
+      cacheTime,
+      nextOffset:
+        limit === data.posts.length ? (page + 1).toString(16) : undefined,
+    })
+    .catch((err) => console.log(err));
 });
 
 tg.start({
