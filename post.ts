@@ -85,7 +85,7 @@ const generateResults = (
         domain: currentSource.domain,
         id: Number(post.id),
         url: post.fileUrl,
-        thumb: post.sampleUrl || post.previewUrl,
+        thumb: post.sampleUrl,
       });
     }
 

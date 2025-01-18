@@ -1,12 +1,13 @@
-import { InputMedia, TelegramClient } from "@mtcute/node";
+import { InputFileLike, InputMedia, TelegramClient } from "@mtcute/node";
 import ffmpeg from "fluent-ffmpeg";
 import { customStorage } from "./storage/type.js";
+import { PassThrough } from "node:stream";
 
 export interface queue {
   domain: string;
   id: number;
   url: string;
-  thumb: string;
+  thumb?: string;
 }
 
 interface AnalyzeReturnType {
@@ -50,7 +51,6 @@ export class Caching {
   }
 
   async analyzing(queue: queue): Promise<AnalyzeReturnType> {
-    if (!queue.thumb) return { status: false };
     return new Promise((resolve, reject) => {
       ffmpeg.ffprobe(queue.url, (err, metadata) => {
         if (err) return { status: false };
@@ -81,9 +81,43 @@ export class Caching {
     });
   }
 
+  generateThumb(url: string): Promise<InputFileLike | undefined> {
+    return new Promise((resolve, reject) => {
+      const bufferStream = new PassThrough();
+
+      ffmpeg(url)
+        .seekInput(0)
+        .frames(1)
+        .addOutputOptions(
+          "-vf blackframe=0,metadata=select:key=lavfi.blackframe.pblack:value=50:function=less,scale=320:320:force_original_aspect_ratio=decrease",
+        )
+        .videoCodec("mjpeg")
+        .outputFormat("image2pipe")
+        .on("end", (stdout, stderr) => {
+          this.client
+            .uploadFile({
+              file: bufferStream,
+              fileName: "thumb.jpg",
+              fileMime: "image/jpeg",
+              requireFileSize: true,
+              requireExtension: true,
+            })
+            .then((file) => resolve(file))
+            .catch((err) => {
+              console.log(err);
+              resolve(undefined);
+            });
+        })
+        .on("error", () => {
+          resolve(undefined);
+        })
+        .pipe(bufferStream, { end: true });
+    });
+  }
+
   async caching() {
     const query = this.queue.pop();
-    if (!query || !query.thumb) {
+    if (!query) {
       setTimeout(this.caching.bind(this), 1000 * 10);
       return;
     }
@@ -98,7 +132,9 @@ export class Caching {
         supportsStreaming: info.supportsStreaming,
         height: info.height,
         width: info.width,
-        thumb: await fetch(query.thumb),
+        thumb: query.thumb
+          ? await fetch(query.thumb)
+          : await this.generateThumb(query.url),
         isAnimated: info.file_type === 3,
       });
       await this.client

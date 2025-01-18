@@ -20,7 +20,7 @@ export default {
       }
     }, 1000 * 60);
 
-    setTimeout(() => clearInterval(int), 1000 * 60 * 60);
+    setTimeout(clearInterval, 1000 * 60 * 60, int);
   },
 };
 
