@@ -1,5 +1,5 @@
 import { Message } from "@mtcute/node";
-import { postCache } from "./storage/type.js";
+import { postCache } from "./../storage/type.js";
 
 const getExt = (url: string, tags: string[]): "photo" | "gif" | "video" => {
   const ext = (url.split(".").pop() as string).toUpperCase();

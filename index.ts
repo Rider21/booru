@@ -4,9 +4,9 @@ import { TelegramClient } from "@mtcute/node";
 import { readdirSync } from "fs";
 
 import storage from "./storage/main.js";
-import { generateResults } from "./post.js";
-import { parsePost } from "./utils.js";
-import { Caching } from "./caching.js";
+import { generateResults } from "./utils/post.js";
+import { parsePost } from "./utils/utils.js";
+import { Caching } from "./utils/caching.js";
 
 const tg = new TelegramClient({
   apiId: Number.parseInt(process.env.API_ID || "17349"),

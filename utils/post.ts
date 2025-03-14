@@ -6,7 +6,7 @@ import {
   InputInlineResultVideo,
   InputInlineResultGif,
 } from "@mtcute/core";
-import { postCache } from "./storage/type.js";
+import { postCache } from "./../storage/type.js";
 import { chunkArray, getExt } from "./utils.js";
 import { Caching } from "./caching.js";
 
@@ -85,7 +85,7 @@ const generateResults = (
         domain: currentSource.domain,
         id: Number(post.id),
         url: post.fileUrl,
-        thumb: post.sampleUrl,
+        previewUrl: post.previewUrl,
       });
     }
 

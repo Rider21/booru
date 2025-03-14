@@ -1,5 +1,5 @@
 import { Message, TelegramClient } from "@mtcute/node";
-import { Caching } from "../caching.js";
+import { Caching } from "../utils/caching.js";
 
 export default {
   commandName: "progress",

@@ -55,11 +55,10 @@ on conflict (id) do update set
     );
   }
 
-  async getById(id: number, allowMin: boolean) {
-    const result = await this.pool.query(
-      `select * from peers where id = $1 ${allowMin ? "" : "and ismin = false"}`,
-      [id],
-    );
+  async getById(id: number) {
+    const result = await this.pool.query("select * from peers where id = $1", [
+      id,
+    ]);
     return result.rows.length === 0 ? null : mapPeerDto(result.rows[0]);
   }
 

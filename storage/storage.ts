@@ -27,6 +27,11 @@ export class BasePgStorage
       connectionString: process.env.POSTGRESQL_ADDON_URI,
       max: 3,
     });
+
+    pool.on("error", (err) => {
+      console.error("pg - ", err.stack);
+    });
+
     this.authKeys = new AuthKeysRepository(pool);
     this.kv = new KeyValueRepository(pool);
     this.refMessages = new RefMessagesRepository(pool);
